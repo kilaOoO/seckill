@@ -5,8 +5,10 @@ import com.bingsenh.seckill.domain.Goods;
 import com.bingsenh.seckill.domain.MiaoshaUser;
 import com.bingsenh.seckill.redis.GoodsKey;
 import com.bingsenh.seckill.redis.RedisService;
+import com.bingsenh.seckill.result.Result;
 import com.bingsenh.seckill.service.GoodsService;
 import com.bingsenh.seckill.service.MiaoshaUserService;
+import com.bingsenh.seckill.vo.GoodsDetailVo;
 import com.bingsenh.seckill.vo.GoodsVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -67,9 +69,42 @@ public class GoodsController {
         //return "goods_list";
     }
 
-    @RequestMapping(value = "/to_detail/{goodsId}",produces = "text/html")
+
+
+    @RequestMapping(value = "/detail/{goodsId}")
     @ResponseBody
-    public String detail(HttpServletRequest request,HttpServletResponse response,Model model, MiaoshaUser user, @PathVariable("goodsId") long goodsId){
+    public Result<GoodsDetailVo> detail(HttpServletRequest request, HttpServletResponse response, Model model, MiaoshaUser user, @PathVariable("goodsId") long goodsId){
+
+        GoodsVo goods = goodsService.getGoodsVoByGoodsId(goodsId);
+        long startAt = goods.getStartDate().getTime();
+        long endAt = goods.getEndDate().getTime();
+        long now = System.currentTimeMillis();
+        int miaoshaStatus = 0;
+        int remainSeconds = 0;
+        if(now<startAt){
+            miaoshaStatus = 0;
+            remainSeconds = (int)((startAt-now)/1000);
+        }else if(now > endAt){
+            miaoshaStatus = 2;
+            remainSeconds = -1;
+        }else {
+            miaoshaStatus = 1;
+            remainSeconds = 0;
+        }
+
+        GoodsDetailVo vo = new GoodsDetailVo();
+        vo.setGoods(goods);
+        vo.setUser(user);
+        vo.setRemainSeconds(remainSeconds);
+        vo.setMiaoshaStatus(miaoshaStatus);
+        return Result.success(vo);
+
+    }
+
+
+    @RequestMapping(value = "/to_detail2/{goodsId}",produces = "text/html")
+    @ResponseBody
+    public String detail2(HttpServletRequest request,HttpServletResponse response,Model model, MiaoshaUser user, @PathVariable("goodsId") long goodsId){
         model.addAttribute("user",user);
         // 取缓存
         String html = redisService.get(GoodsKey.getGoodsDetail,""+goodsId,String.class);
