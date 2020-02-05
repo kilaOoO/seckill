@@ -2,6 +2,7 @@ package com.bingsenh.seckill.service;
 
 import com.bingsenh.seckill.dao.GoodsDao;
 import com.bingsenh.seckill.domain.Goods;
+import com.bingsenh.seckill.domain.MiaoshaGoods;
 import com.bingsenh.seckill.vo.GoodsVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,9 +27,11 @@ public class GoodsService {
     }
 
 
-    public void reduceStock(GoodsVo goods){
-        long goodsId = goods.getId();
-        goodsDao.reduceStock(goodsId);
+    public boolean reduceStock(GoodsVo goods){
+        MiaoshaGoods g = new MiaoshaGoods();
+        g.setGoodsId(goods.getId());
+        int ret = goodsDao.reduceStock(g);
+        return ret>0;
     }
 
 }

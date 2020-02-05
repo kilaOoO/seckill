@@ -1,6 +1,7 @@
 package com.bingsenh.seckill.controller;
 
 import com.bingsenh.seckill.domain.User;
+import com.bingsenh.seckill.rabbitmq.MQSender;
 import com.bingsenh.seckill.redis.KeyPrefix;
 import com.bingsenh.seckill.redis.RedisService;
 import com.bingsenh.seckill.redis.UserKey;
@@ -24,6 +25,38 @@ public class SimpleController {
     UserService userService;
     @Autowired
     RedisService redisService;
+
+    @Autowired
+    MQSender sender;
+
+    @RequestMapping("/mq")
+    @ResponseBody
+    public Result<String> mq(){
+        sender.send("hello,hbs");
+        return Result.success("hello world");
+    }
+
+    @RequestMapping("/mq/header")
+    @ResponseBody
+    public Result<String> header() {
+		sender.sendHeader("hello,imooc");
+        return Result.success("Hello，world");
+    }
+
+    @RequestMapping("/mq/fanout")
+    @ResponseBody
+    public Result<String> fanout() {
+		sender.sendFanout("hello,imooc");
+        return Result.success("Hello，world");
+    }
+
+	@RequestMapping("/mq/topic")
+    @ResponseBody
+    public Result<String> topic() {
+		sender.sendTopic("hello,imooc");
+        return Result.success("Hello，world");
+    }
+
 
     @RequestMapping("/thymeleaf")
     public String  thymeleaf(Model model){
