@@ -75,7 +75,7 @@ public class MiaoshaUserService {
         String formPass = loginVo.getPassword();
 
         // 判断手机号是否存在
-        MiaoshaUser user = miaoshaUserDao.getById(Long.parseLong(mobile));
+        MiaoshaUser user = getById(Long.parseLong(mobile));
         if(user == null){
             throw new GlobalException(CodeMsg.MOBILE_NOT_EXIST);
         }
