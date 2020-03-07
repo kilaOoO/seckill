@@ -109,11 +109,17 @@ public MiaoshaUser getById(long id){
 
 通过三级缓冲保护，内存标记 、Redis 预减库存 、RabbitMQ 异步下单，这样做的目的是最大力度减少对数据库的访问。
 
-1. 在秒杀阶段使用本地标记对秒杀过的商品做标记，若被标记过直接返回重复秒杀，未被标记才查询 Redis。通过内存标记减少对 Redis 的访问。
+1. 在秒杀阶段使用本地标记对秒杀商品的库存是否充足做标记，若为 true 则直接返回库存不足，为 false 才查询 Redis。通过内存标记减少对 Redis 的访问。
 2. 抢购开始前，先将商品库存同步到 redis 中，抢购时先对 Redis 预减库存，若库存不足则直接返回，否则更新数据库。通过 Redis 来减少对数据库访问。
 3. 通过 RabbitMQ 将用户请求入队缓冲，实现异步下单。
 
 ```java
+// 判断是否已经秒杀到了
+MiaoshaOrder order = orderService.getMiaoshaOrderByUserIdGoodsId(user.getId(),goodsId);
+if(order != null){
+    return  Result.error(CodeMsg.REPEATE_MIAOSHA);
+}
+
 // 内存标记，减少redis访问
 boolean over = localOverMap.get(goodsId);
 if(over){
@@ -125,12 +131,6 @@ long stock = redisService.decr(GoodsKey.getMiaoshaGoodsStock,""+goodsId);
 if(stock<0){
     localOverMap.put(goodsId,true);
     return Result.error(CodeMsg.MIAO_SHA_OVER);
-}
-
-// 判断是否已经秒杀到了
-MiaoshaOrder order = orderService.getMiaoshaOrderByUserIdGoodsId(user.getId(),goodsId);
-if(order != null){
-    return  Result.error(CodeMsg.REPEATE_MIAOSHA);
 }
 
 // 入队
@@ -163,6 +163,4 @@ return Result.success(0);
 
 1. 防止恶意机器人刷单
 2. 分散用户请求从而缓解服务器压力
-
-### 8. 限流
 
